@@ -31,6 +31,7 @@ type installConfig struct {
 	ControllerComponentLabel string
 	CreatedByAnnotation      string
 	ProxyAPIPort             uint
+	CertificateBundleName    string
 }
 
 type installOptions struct {
@@ -99,6 +100,7 @@ func validateAndBuildConfig(options *installOptions) (*installConfig, error) {
 		ControllerComponentLabel: k8s.ControllerComponentLabel,
 		CreatedByAnnotation:      k8s.CreatedByAnnotation,
 		ProxyAPIPort:             options.proxyAPIPort,
+		CertificateBundleName:    k8s.CertificateBundleName,
 	}, nil
 }
 
