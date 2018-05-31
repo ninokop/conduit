@@ -37,6 +37,13 @@ impl Ctx {
             Ctx::Server(ref ctx) => &ctx.proxy,
         }
     }
+
+    pub fn is_tls(&self) -> bool {
+        match *self {
+            Ctx::Client(ref ctx) => ctx.is_tls,
+            Ctx::Server(ref ctx) => ctx.is_tls,
+        }
+    }
 }
 
 impl Server {
