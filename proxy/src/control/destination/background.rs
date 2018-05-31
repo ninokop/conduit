@@ -63,6 +63,7 @@ struct DestinationSet<T: HttpService<ResponseBody = RecvBody>> {
     addrs: Exists<Cache<SocketAddr, Metadata>>,
     query: Option<DestinationServiceQuery<T>>,
     dns_query: Option<IpAddrListFuture>,
+    dns_resolver: dns::Resolver,
     responders: Vec<Responder>,
 }
 
@@ -202,17 +203,14 @@ where
                                 addrs: Exists::Unknown,
                                 query,
                                 dns_query: None,
+                                dns_resolver: self.dns_resolver.clone(),
                                 responders: vec![resolve.responder],
                             };
                             // If the authority is one for which the Destination service is never
                             // relevant (e.g. an absolute name that doesn't end in ".svc.$zone." in
                             // Kubernetes), then immediately start polling DNS.
                             if set.query.is_none() {
-                                set.reset_dns_query(
-                                    &self.dns_resolver,
-                                    Instant::now(),
-                                    vac.key(),
-                                );
+                                set.reset_dns_query(Instant::now(),vac.key());
                             }
                             vac.insert(set);
                         },
@@ -290,14 +288,14 @@ where
                 },
                 Exists::No => {
                     // Fall back to DNS.
-                    set.reset_dns_query(&self.dns_resolver, Instant::now(), auth);
+                    set.reset_dns_query(Instant::now(), auth);
                 },
                 Exists::Unknown => (), // No change from Destination service's perspective.
             }
 
             // Poll DNS after polling the Destination service. This may reset the DNS query but it
             // won't affect the Destination Service query.
-            set.poll_dns(&self.dns_resolver, auth);
+            set.poll_dns(auth);
         }
     }
 
@@ -338,7 +336,6 @@ where
 {
     fn reset_dns_query(
         &mut self,
-        dns_resolver: &dns::Resolver,
         deadline: Instant,
         authority: &DnsNameAndPort,
     ) {
@@ -348,7 +345,7 @@ where
             deadline
         );
         self.reset_on_next_modification();
-        self.dns_query = Some(dns_resolver.resolve_all_ips(deadline, &authority.host));
+        self.dns_query = Some(self.dns_resolver.resolve_all_ips(deadline, &authority.host));
     }
 
     // Processes Destination service updates from `request_rx`, returning the new query
@@ -411,7 +408,7 @@ where
         }
     }
 
-    fn poll_dns(&mut self, dns_resolver: &dns::Resolver, authority: &DnsNameAndPort) {
+    fn poll_dns(&mut self, authority: &DnsNameAndPort) {
         // Duration to wait before polling DNS again after an error
         // (or a NXDOMAIN response with no TTL).
         const DNS_ERROR_TTL: Duration = Duration::from_secs(5);
@@ -463,7 +460,7 @@ where
                     Instant::now() + DNS_ERROR_TTL
                 },
             };
-            self.reset_dns_query(dns_resolver, deadline, &authority)
+            self.reset_dns_query(deadline, &authority)
         }
     }
 }
