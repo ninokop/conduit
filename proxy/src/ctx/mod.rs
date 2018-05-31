@@ -109,7 +109,7 @@ pub mod test_util {
         S: fmt::Display,
     {
         let labels = DstLabels::new(labels);
-        ctx::transport::Client::new(&proxy, &addr(), labels)
+        ctx::transport::Client::new(&proxy, &addr(), labels, false)
     }
 
     pub fn request(

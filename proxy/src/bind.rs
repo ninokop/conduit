@@ -215,6 +215,9 @@ where
             &self.ctx,
             &addr,
             ep.dst_labels().cloned(),
+            // TODO: when we can use TLS for client connections, indicate
+            //       whether or not the connection was TLS here.
+            false,
         );
 
         // Map a socket address to a connection.
