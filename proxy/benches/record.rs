@@ -35,7 +35,7 @@ fn process() -> Arc<ctx::Process> {
 }
 
 fn server(proxy: &Arc<ctx::Proxy>) -> Arc<ctx::transport::Server> {
-    ctx::transport::Server::new(&proxy, &addr(), &addr(), &Some(addr()))
+    ctx::transport::Server::new(&proxy, &addr(), &addr(), &Some(addr()), false)
 }
 
 fn client<L, S>(proxy: &Arc<ctx::Proxy>, labels: L) -> Arc<ctx::transport::Client>
@@ -43,7 +43,7 @@ where
     L: IntoIterator<Item=(S, S)>,
     S: fmt::Display,
 {
-    ctx::transport::Client::new(&proxy, &addr(), metrics::DstLabels::new(labels))
+    ctx::transport::Client::new(&proxy, &addr(), metrics::DstLabels::new(labels), false)
 }
 
 fn request(
